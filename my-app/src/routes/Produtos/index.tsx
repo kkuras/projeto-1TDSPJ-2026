@@ -7,6 +7,8 @@ import { RiDeleteBin6Line as Excluir } from "react-icons/ri";
 export default function Produtos() {
   document.title = "Produtos";
 
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwPoDqjKno2qvj-TXWopojKzHZ0wNdDYZrZXVT27khCb-h7pzEvhkWbMhHw1l3Oj6XQWw/exec"
+
   //REF do DIALOG para o produto que será deletado:
   const dialogRef = useRef<HTMLDialogElement>(null);
   //STATE do DIALOG para o produto que será deletado:
@@ -31,7 +33,8 @@ export default function Produtos() {
     const carregaProdutos = async ()=>{
       try {
 
-        const response = await fetch("http://localhost:3001/produtos");
+        // const response = await fetch("http://localhost:3001/produtos");
+        const response = await fetch(WEB_APP_URL);
 
         if(!response.ok){
           throw new Error(`Falha na requisição dos produtos... ${response.status} - ${response.statusText}`);
