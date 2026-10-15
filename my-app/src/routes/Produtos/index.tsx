@@ -7,8 +7,8 @@ import { RiDeleteBin6Line as Excluir } from "react-icons/ri";
 export default function Produtos() {
   document.title = "Produtos";
 
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwPoDqjKno2qvj-TXWopojKzHZ0wNdDYZrZXVT27khCb-h7pzEvhkWbMhHw1l3Oj6XQWw/exec"
-
+  const WEB_APP_URL = import.meta.env.VITE_API_URL;
+                       
   //REF do DIALOG para o produto que será deletado:
   const dialogRef = useRef<HTMLDialogElement>(null);
   //STATE do DIALOG para o produto que será deletado:
@@ -36,13 +36,30 @@ export default function Produtos() {
         // const response = await fetch("http://localhost:3001/produtos");
         const response = await fetch(WEB_APP_URL);
 
+
         if(!response.ok){
           throw new Error(`Falha na requisição dos produtos... ${response.status} - ${response.statusText}`);
         }
 
-        const data:TipoProduto[] = await response.json();
-        console.log(data);
-        setProdutos(data); //Atualizando a lista de produtos
+        // const data:TipoProduto[] = await response.json();
+        // console.log(data);
+
+        const resultado = await response.json();
+        // const prod = data.slice(1).map((p)=>({
+        //   id:p[0],
+        //   nome:p[1],
+        //   preco:p[2],
+        //   estoque:p[3],
+        //   avatar:p[4],
+        // }))
+
+        if(resultado.status === "error"){
+          throw new Error(`Erro na listagem de produtos: ${resultado.message}`);
+        }
+
+        console.log(resultado.data);
+
+        setProdutos(resultado.data); //Atualizando a lista de produtos
         //setProdutos(data); //Atualizando a lista de produtos
 
       } catch (error) {
