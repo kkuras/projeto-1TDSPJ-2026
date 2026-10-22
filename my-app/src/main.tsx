@@ -3,12 +3,13 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import App from './App'
 import Home from './routes/Home'
-import Produtos from './routes/Produtos'
+
 import EditarProdutos from './routes/EditarProdutos'
 import Error from './routes/Error'
 import UsuariosGit from './routes/UsuariosGit'
 import CadProduto from './routes/CadProduto'
 import "./globals.css";
+import Produtos from './routes/Produtos';
 
 const router = createBrowserRouter([
   {

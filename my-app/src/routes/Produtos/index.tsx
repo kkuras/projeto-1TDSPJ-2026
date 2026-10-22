@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import type { TipoProduto } from "../../types/types";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { CiEdit as Editar} from "react-icons/ci";
 import { RiDeleteBin6Line as Excluir } from "react-icons/ri";
+import { produtosPromise } from "../../service/produto";
+
+const API_URL = import.meta.env.VITE_API_URL
 
 export default function Produtos() {
   document.title = "Produtos";
 
-  const WEB_APP_URL = import.meta.env.VITE_API_URL;
                        
   //REF do DIALOG para o produto que será deletado:
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -20,9 +22,6 @@ export default function Produtos() {
     dialogRef.current?.showModal();
   }
 
-  //Criando o redirecionador
-  const navigate = useNavigate();
-
   //Estrutua que vai receber a lista, seja ela mocada ou externa!
   const [produtos, setProdutos] = useState<TipoProduto[]>([]);
 
@@ -33,35 +32,9 @@ export default function Produtos() {
     const carregaProdutos = async ()=>{
       try {
 
-        // const response = await fetch("http://localhost:3001/produtos");
-        const response = await fetch(WEB_APP_URL);
-
-
-        if(!response.ok){
-          throw new Error(`Falha na requisição dos produtos... ${response.status} - ${response.statusText}`);
-        }
-
-        // const data:TipoProduto[] = await response.json();
-        // console.log(data);
-
-        const resultado = await response.json();
-        // const prod = data.slice(1).map((p)=>({
-        //   id:p[0],
-        //   nome:p[1],
-        //   preco:p[2],
-        //   estoque:p[3],
-        //   avatar:p[4],
-        // }))
-
-        if(resultado.status === "error"){
-          throw new Error(`Erro na listagem de produtos: ${resultado.message}`);
-        }
-
-        console.log(resultado.data);
-
-        setProdutos(resultado.data); //Atualizando a lista de produtos
-        //setProdutos(data); //Atualizando a lista de produtos
-
+        const data:TipoProduto[] = await produtosPromise;
+        setProdutos(data);
+        
       } catch (error) {
         console.error(error);
       }
@@ -74,15 +47,33 @@ export default function Produtos() {
   const handleDelete = async()=>{
       try {
 
-        const response = await fetch(`http://localhost:3001/produtos/${idExclusivo}`, {
-          method: "DELETE",
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers:{
+            "Content-Type":"text/plain;charset=utf-8"
+          },
+          body: JSON.stringify({action:"DELETE",id:idExclusivo}),redirect:"follow"
         });
 
         if(!response.ok){
           throw new Error(`Falha na exclusão dos produtos... ${response.status} - ${response.statusText}`);
         }
-        alert("Produto excluído com sucesso!");
-        navigate("/"); //Redirecionando para a página inicial
+
+        const {status}  = await response.json();
+
+        if(status === "error") {
+          throw new Error(`Erro na listagem: ${status}`);
+        }
+       
+        const id:string = idExclusivo;
+        
+        //Refatorando o idEclusivo para utilizalo como ponteiro de transformação do MODAL!
+        dialogRef.current?.close();
+        setIdExclusivo("");
+        dialogRef.current?.showModal()
+       
+        //RECARREGANDO A TABELA DE PRODUTOS
+        setProdutos((prevProdut)=> prevProdut.filter((p)=> p.id !== id));
 
       } catch (error) {
         console.error(error);
@@ -95,11 +86,24 @@ export default function Produtos() {
 
       <dialog ref={dialogRef} style={{ padding: "20px", borderRadius: "8px", border: "1px solid #ccc" }}>
         <h3>Confirmar Exclusão de Produto</h3>
-        <p>Tem certeza que deseja excluir este produto?</p>
-        <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "15px" }}>
-          <button onClick={()=> dialogRef.current?.close()}>Cancelar</button>
-          <button onClick={()=> handleDelete()} style={{ background: "red", color: "white", border: "none", padding: "5px 10px", cursor: "pointer" }}>Excluir</button>
+        {
+          idExclusivo !== "" ?(
+          <div>
+            <p>Tem certeza que deseja excluir este produto?</p>
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "15px" }}>
+              <button onClick={()=> dialogRef.current?.close()}>Cancelar</button>
+              <button onClick={()=> handleDelete()} style={{ background: "red", color: "white", border: "none", padding: "5px 10px", cursor: "pointer" }}>Excluir</button>
+            </div>
         </div>
+        ):(
+          <div>
+            <p>Produto Excluído com Sucesso</p>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "15px" }}>
+              <button onClick={()=> dialogRef.current?.close()} style={{ background: "blue", color: "white", border: "none", padding: "5px 10px", cursor: "pointer" }}>Close</button>
+            </div>
+        </div>
+        )
+        }
 
       </dialog>
 
@@ -114,12 +118,16 @@ export default function Produtos() {
           </tr>
         </thead>
         <tbody>
-          {produtos.map((p) => (
-            <tr key={p.id}>
+          {produtos.map((p,i) => (
+            <tr key={i}>
               <td>{p.id}</td>
               <td>{p.nome}</td>
               <td>{p.preco}</td>
-              <td><img src={p.avatar} alt={p.nome} width={30}/></td>
+              <td>
+               {
+                p.avatar == "" ? <img src={"https://placehold.co/200x200/000000/FFFFFF/png"} alt={p.nome} width={30}/> : <img src={p.avatar} alt={p.nome} width={30}/> 
+                }
+              </td>
               <td>
                 <Link to={`/editar-produtos/${p.id}`}><Editar/></Link> |
                 <Excluir style={{cursor:"pointer"}} onClick={()=> abrirModal(p.id)}/>
